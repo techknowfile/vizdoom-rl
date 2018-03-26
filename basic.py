@@ -41,8 +41,8 @@ if not os.path.exists('models'):
     os.makedirs('models')
 
 save_model = True
-load_model = True
-skip_learning = True
+load_model = False
+skip_learning = False
 
 config_file_path = "scenarios/simpler_basic.cfg"
 
@@ -92,14 +92,21 @@ class ReplayMemory:
         return s1, self.a[i], s2, self.isterminal[i], self.r[i]
 
 def create_model(available_actions_count):
-    state_input = Input(shape=(1, resolution[0], resolution[1]))
-    conv1 = Conv2D(8, 6, strides=3, activation='relu', data_format="channels_first")(state_input)  # filters, kernal_size, stride
-    conv2 = Conv2D(8, 3, strides=2, activation='relu', data_format="channels_first")(conv1)  # filters, kernal_size, stride
-    flatten = Flatten()(conv2)
-    fc1 = Dense(128, input_shape=(192,), activation='relu')(flatten)
-    fc2 = Dense(available_actions_count, input_shape=(128,))(fc1)
+    model = Sequential()
+    model.add(Conv2D(8, 6, input_shape=(1, resolution[0], resolution[1]), strides=3, activation='relu', data_format="channels_first"))
+    model.add(Conv2D(8, 3, strides=2, activation='relu', data_format="channels_first"))
+    model.add(Flatten())
+    model.add(Dense(128, input_shape=(192,), activation='relu'))
+    model.add(Dense(available_actions_count, input_shape=(128,)))
 
-    model = keras.models.Model(input=state_input, output=fc2)
+    state_input = Input(shape=(1, resolution[0], resolution[1]))
+    # conv1 = Conv2D(8, 6, strides=3, activation='relu', data_format="channels_first")(state_input)  # filters, kernal_size, stride
+    # conv2 = Conv2D(8, 3, strides=2, activation='relu', data_format="channels_first")(conv1)  # filters, kernal_size, stride
+    # flatten = Flatten()(conv2)
+    # fc1 = Dense(128, input_shape=(192,), activation='relu')(flatten)
+    # fc2 = Dense(available_actions_count, input_shape=(128,))(fc1)
+
+    # model = keras.models.Model(input=state_input, output=fc2)
     adam = Adam(lr=0.001)
     model.compile(loss="mse", optimizer=adam)
     return state_input, model

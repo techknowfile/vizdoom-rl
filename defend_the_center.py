@@ -13,7 +13,7 @@ import skimage.color, skimage.transform
 from tqdm import trange
 
 # Q-learning hyperparams
-learning_rate = 0.000005
+learning_rate = 0.001
 discount_factor = 0.99
 epochs = 100
 learning_steps_per_epoch = 10000
@@ -29,13 +29,13 @@ test_episodes_per_epoch = 100
 resolution = (30, 45)
 
 # Other parameters
-frame_repeat = 12
+frame_repeat = 10
 resolution = [30, 45]
-kframes = 3
+kframes = 1
 resolution[1] = resolution[1]*kframes
 episodes_to_watch = 10
 
-model_savefile = "models/model-dtc-fr4-kf3.pth"
+model_savefile = "models/model-dtc-fr{}-kf{}.pth".format(frame_repeat, kframes)
 if not os.path.exists('models'):
     os.makedirs('models')
 
@@ -140,7 +140,7 @@ def perform_learning_step(epoch, sb):
 
     def exploration_rate(epoch):
         """# Define exploration rate change over time"""
-        start_eps = 1.0
+        start_eps = 0.4
         end_eps = 0.1
         const_eps_epochs = 0.1 * epochs  # 10% of learning time
         eps_decay_epochs = 0.6 * epochs  # 60% of learning time
@@ -218,10 +218,9 @@ if __name__ == '__main__':
     # Create replay memory which will store the transitions
     memory = ReplayMemory(capacity=replay_memory_size)
 
-    if load_model:
+    if load_model and os.path.isfile(model_savefile):
         print("Loading model from: ", model_savefile)
         model = lm(model_savefile)
-        pass
     else:
         my_input, model = create_model(len(actions))
     
