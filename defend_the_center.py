@@ -13,11 +13,11 @@ import skimage.color, skimage.transform
 from tqdm import trange
 
 # Q-learning hyperparams
-learning_rate = 0.00025
+learning_rate = 0.000005
 discount_factor = 0.99
-epochs = 1000
-learning_steps_per_epoch = 2000
-replay_memory_size = 10000
+epochs = 100
+learning_steps_per_epoch = 10000
+replay_memory_size = 100000
 
 # NN learning hyperparams
 batch_size = 64
@@ -28,13 +28,14 @@ test_episodes_per_epoch = 100
 # Image params
 resolution = (30, 45)
 
-
 # Other parameters
 frame_repeat = 12
-resolution = (30, 45)
+resolution = [30, 45]
+kframes = 3
+resolution[1] = resolution[1]*kframes
 episodes_to_watch = 10
 
-model_savefile = "models/model-doom.pth"
+model_savefile = "models/model-dtc-fr4-kf3.pth"
 if not os.path.exists('models'):
     os.makedirs('models')
 
@@ -46,14 +47,14 @@ config_file_path = "scenarios/defend_the_center.cfg"
 
 def preprocess(img):
     """"""
-    img = skimage.transform.resize(img, resolution)
+    img = skimage.transform.resize(img, [resolution[0], resolution[1] // kframes])
     img = img.astype(np.float32)
     return img
 
 class ReplayMemory:
     def __init__(self, capacity):
         channels = 1
-        state_shape = (capacity, channels, resolution[0], resolution[1])
+        state_shape = (capacity, channels, resolution[0], resolution[1] // kframes)
         self.s1 = np.zeros(state_shape, dtype=np.float32)
         self.s2 = np.zeros(state_shape, dtype=np.float32)
         self.a = np.zeros(capacity, dtype=np.int32)
@@ -76,8 +77,18 @@ class ReplayMemory:
         self.size = min(self.size + 1, self.capacity)
 
     def get_sample(self, sample_size):
-        i = random.sample(range(0, self.size), sample_size)
-        return self.s1[i], self.a[i], self.s2[i], self.isterminal[i], self.r[i]
+        i = sample(range(0, self.size), sample_size)
+        augmented_i = [list(range(j - kframes + 1, j + 1)) for j in i]
+        s1 = np.array([self.s1.take(i, mode='wrap', axis=0) for i in augmented_i])
+        s1 = np.moveaxis(s1, [0, 1, 2, 3, 4], [0, 3, 1, 2, 4])
+        reshape = s1.shape[0:3] + tuple([-1])
+        s1 = np.reshape(s1, reshape)
+
+        s2 = np.array([self.s2.take(i, mode='wrap', axis=0) for i in augmented_i])
+        s2 = np.moveaxis(s2, [0, 1, 2, 3, 4], [0, 3, 1, 2, 4])
+        reshape = s2.shape[0:3] + tuple([-1])
+        s2 = np.reshape(s2, reshape)
+        return s1, self.a[i], s2, self.isterminal[i], self.r[i]
 
 def create_model(available_actions_count):
     state_input = Input(shape=(1, resolution[0], resolution[1]))
@@ -104,13 +115,26 @@ def learn_from_memory(model):
         target_q[np.arange(target_q.shape[0]), a] = r + discount_factor * (1 - isterminal) * q2
         model.fit(s1, target_q, verbose=0)
 
+class StateBuilder:
+    def __init__(self, frame_resolution, frames_per_state=1, axis=3):
+        self.pos = 0
+        self.size = frames_per_state
+        self.frames = np.zeros((frame_resolution[0], frame_resolution[1], frame_resolution[2], self.size, frame_resolution[3]))
+
+    def get_state(self, frame):
+        self.frames[:, :, :, self.pos, :] = frame
+        self.state = self.frames.reshape(*self.frames.shape[:-2], -1)  # TODO: make sure order is the same as in training!
+        self.state = self.state.take(range(45*(self.pos-self.size + 1), 45*(self.pos + 1)), axis=3)
+        self.pos = (self.pos + 1) % self.size
+        return self.state
+
 def get_best_action(state):
     q = model.predict(state, batch_size=1)
     m = np.argmax(q, axis=1)[0]
     action = m  #wrong
     return action
 
-def perform_learning_step(epoch):
+def perform_learning_step(epoch, sb):
     """ Makes an action according to eps-greedy policy, observes the result
     (next state, reward) and learns from the transition"""
 
@@ -138,8 +162,9 @@ def perform_learning_step(epoch):
         a = randint(0, len(actions) - 1)
     else:
         # Choose the best action according to the network.
-        s1 = s1.reshape([1, 1, resolution[0], resolution[1]])
-        a = get_best_action(s1)
+        s1 = s1.reshape([1, 1, resolution[0], resolution[1] // kframes])
+        state = sb.get_state(s1)
+        a = get_best_action(state)
     reward = game.make_action(actions[a], frame_repeat)
 
     isterminal = game.is_episode_finished()
@@ -166,6 +191,23 @@ def initialize_vizdoom(config_file_path):
 
 
 if __name__ == '__main__':
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-k', '--kframes', type=int)
+    parser.add_argument('-t', '--test', action='store_true', default=None)
+    parser.add_argument('-r', '--frame_repeat', type=int)
+    args, extras = parser.parse_known_args()
+    if args.kframes:
+        kframes = args.kframes
+    if args.test:
+        load_model = True
+        skip_learning = True
+    if args.frame_repeat:
+        frame_repeat = args.frame_repeat
+
+    print(("Testing" if skip_learning else "Training"), 'KFrames:', kframes, 'Frame Repeat:', frame_repeat)
+
     # Create Doom instance
     game = initialize_vizdoom(config_file_path)
 
@@ -193,8 +235,9 @@ if __name__ == '__main__':
 
             print("Training...")
             game.new_episode()
+            sb = StateBuilder((1, 1, resolution[0], resolution[1] // kframes), frames_per_state=kframes)
             for learning_step in trange(learning_steps_per_epoch, leave=True):
-                perform_learning_step(epoch)
+                perform_learning_step(epoch, sb)
                 if game.is_episode_finished():
                     score = game.get_total_reward()
                     train_scores.append(score)
@@ -213,9 +256,12 @@ if __name__ == '__main__':
             test_scores = []
             for test_episode in trange(test_episodes_per_epoch, leave=False):
                 game.new_episode()
+                sb = StateBuilder((1, 1, resolution[0], resolution[1] // kframes), frames_per_state=kframes)
                 while not game.is_episode_finished():
-                    state = preprocess(game.get_state().screen_buffer)
-                    state = state.reshape([1, 1, resolution[0], resolution[1]])
+                    frame = preprocess(game.get_state().screen_buffer)
+                    frame = frame.reshape([1, 1, resolution[0], resolution[1] // kframes])
+                    state = sb.get_state(frame)
+                    
                     best_action_index = get_best_action(state)
 
                     game.make_action(actions[best_action_index], frame_repeat)
@@ -243,9 +289,11 @@ if __name__ == '__main__':
 
     for _ in range(episodes_to_watch):
         game.new_episode()
+        sb = StateBuilder((1, 1, resolution[0], resolution[1] // kframes), frames_per_state=kframes)
         while not game.is_episode_finished():
-            state = preprocess(game.get_state().screen_buffer)
-            state = state.reshape([1, 1, resolution[0], resolution[1]])
+            frame = preprocess(game.get_state().screen_buffer)
+            frame = frame.reshape([1, 1, resolution[0], resolution[1] // kframes])
+            state = sb.get_state(frame)
             best_action_index = get_best_action(state)
 
             # Instead of make_action(a, frame_repeat) in order to make the animation smooth
