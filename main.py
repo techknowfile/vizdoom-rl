@@ -23,7 +23,7 @@ class PlayGame:
         self.learning_rate = 0.001
         self.discount_factor = 1.0
         self.epochs = 1
-        self.learning_steps_per_epoch = 100
+        self.learning_steps_per_epoch = 1000
         self.replay_memory_size = 10000
         self.test_memory_size = 10000
 
@@ -46,6 +46,18 @@ class PlayGame:
         elif game_type == 'basic':
             self.config_file_path = "../ViZDoom/scenarios/simpler_basic.cfg"
 
+        self.game_type = game_type
+        self.load_model = load_model
+
+        self.model = None
+        self.game = None
+        self.actions = None
+        self.memory = None
+        self.dqn = None
+
+        self.initalize_game()
+
+    def initalize_game(self):
         # Create Doom instance
         self.game = self.initialize_vizdoom()
 
@@ -54,9 +66,7 @@ class PlayGame:
         self.actions = [list(a) for a in it.product([0, 1], repeat=n)]
         self.actions = [[0, 0, 1], [0, 1, 0], [1, 0, 0]]
 
-        self.model = None
-
-        if load_model:
+        if self.load_model:
             print("Loading model from: ", self.model_savefile)
             self.model = lm(self.model_savefile)
             pass
@@ -82,11 +92,58 @@ class PlayGame:
         print("Doom initialized.")
         return game
 
+    def transfer_learn(self):
+        # Train a new agent if we are not loading one
+        if not self.load_model:
+            # Train model in environment
+            self.train_agent()
+
+            # View model in environment
+            self.view_agent()
+
+        # Reverse environment
+        if self.game_type == 'dtc':
+            self.config_file_path = "../ViZDoom/scenarios/simpler_basic.cfg"
+        elif self.game_type == 'basic':
+            self.config_file_path = "../ViZDoom/scenarios/defend_the_center.cfg"
+
+        # Reinitialize game environment
+        self.initalize_game()
+
+        # Train model in new environment
+        self.train_agent()
+
+        # View model in new environment
+        self.view_agent()
+
+    def optimize_hyperprameters(self):
+        k_frame_list = [1, 2, 4, 8]
+        learning_rate_list = [0.001, 0.01, 0.05]
+        discount_factor_list = [1, 0.98, 0.95, 0.9]
+        model_type = [1, 2, 3]
+
+        hyperparameter_names = ['kframes', 'learning_rate', 'discount_factor', 'model_type']
+        hyperparameters = [k_frame_list, learning_rate_list, discount_factor_list, model_type]
+
+        for index, hyperparameter_list in enumerate(hyperparameters):
+            for parameter in hyperparameter_list:
+
+                if hyperparameter_names[index] == 'kframes':
+                    self.kframes = parameter
+                elif hyperparameter_names[index] == 'learning_rate':
+                    self.learning_rate = parameter
+                elif hyperparameter_names[index] == 'discount_factor':
+                    self.discount_factor = parameter
+                elif hyperparameter_names[index] == 'model_type':
+                    self.model_type = parameter
+
+                # Re-initialize
+                self.initalize_game()
+
+                self.train_agent()
+                #self.view_agent()
+
     def view_agent(self):
-        #self.memory = ReplayMemory(capacity=self.replay_memory_size, kframes=self.kframes, resolution=self.resolution, test_memory_size=self.test_memory_size)
-
-        #dqn = DQN(self.memory, self.model, self.game, self.actions, self.resolution, self.frame_repeat, self.batch_size, self.kframes, self.epochs, self.discount_factor)
-
         # Reinitialize the game with window visible
         self.game.close()
         self.game.set_window_visible(True)
@@ -96,13 +153,11 @@ class PlayGame:
         for _ in range(self.episodes_to_watch):
             self.game.new_episode()
             while not self.game.is_episode_finished():
-                frame = self.dqn.preprocess(self.game.get_state().screen_buffer).T
-                # self.memory.add_to_test_buffer(frame)
-                # state_kframes = self.memory.get_test_sample()
-                # state_kframes = state_kframes.reshape([1, self.kframes, self.resolution[0], self.resolution[1]])  # 1 is the batch size
-                frame = np.dstack((frame, frame)).T
-                frame = np.expand_dims(frame, axis=0)
-                best_action_index = self.dqn.get_best_action(frame)
+                frame = self.dqn.preprocess(self.game.get_state().screen_buffer)
+                self.memory.add_to_test_buffer(frame)
+                state_kframes = self.memory.get_test_sample()
+                state_kframes = state_kframes.reshape([1, self.kframes, self.resolution[0], self.resolution[1]])  # 1 is the batch size
+                best_action_index = self.dqn.get_best_action(state_kframes)
 
                 # Instead of make_action(a, frame_repeat) in order to make the animation smooth
                 self.game.set_action(self.actions[best_action_index])
@@ -178,7 +233,7 @@ def main():
         os.makedirs('models')
 
     # 1 = train agent, 2 = test agent, 3 = transfer learning, 4 = test hyperparameters
-    option = 2
+    option = 1
     kframes = 2
 
     save_model = True
@@ -210,10 +265,10 @@ def main():
         pg.view_agent()
     # Transfer agent from one environment to another
     elif option == 3:
-        print "TODO"
+        pg.transfer_learn()
     # Search across a range of hyperparameters to optimize them
     elif option == 4:
-        print "TODO"
+        pg.optimize_hyperprameters()
 
 
 if __name__ == '__main__':
