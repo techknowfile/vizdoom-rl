@@ -36,7 +36,7 @@ class NeuralModel:
 
     # Conv + Conv + Conv + dense + dense
     def model_two(self):
-        state_input = Input(shape=(self.kframes, self.resolution[0] * self.resolution[1]))
+        state_input = Input(shape=(self.kframes, self.resolution[0], self.resolution[1]))
         conv1 = Conv2D(filters=16, kernel_size=3, strides=1, activation='relu', data_format="channels_first")(state_input)
         conv2 = Conv2D(filters=32, kernel_size=3, strides=1, activation='relu', data_format="channels_first")(conv1)
         conv3 = Conv2D(filters=32, kernel_size=2, strides=1, activation='relu', data_format="channels_first")(conv2)

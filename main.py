@@ -131,7 +131,8 @@ class PlayGame:
         hyperparameters = [reward_shape, discount_factor_list, model_type]
 
         for index, hyperparameter_list in enumerate(hyperparameters):
-            plt.clf()
+            plt.close(1)
+            plt.close(2)
             for parameter in hyperparameter_list:
 
                 self.current_parameter = hyperparameter_names[index]
