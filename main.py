@@ -18,20 +18,20 @@ warnings.filterwarnings("ignore")
 class PlayGame:
     def __init__(self, load_model, game_type, model_savefile):
         # Q-learning hyperparams
-        self.kframes = 2
-        self.learning_rate = 0.001
+        self.kframes = 3
+        self.learning_rate = 0.0006
         self.discount_factor = 1.0
-        self.epochs = 2
+        self.epochs = 20
         self.learning_steps_per_epoch = 1000
         self.replay_memory_size = 10000
         self.test_memory_size = 10000
 
         # NN learning hyperparams
         self.batch_size = 64
-        self.model_type = 3
+        self.model_type = 4
 
         # Training regime
-        self.test_episodes_per_epoch = 100
+        self.test_episodes_per_epoch = 10
 
         # Other parameters
         self.frame_repeat = 10
@@ -41,11 +41,11 @@ class PlayGame:
         self.model_savefile = model_savefile
 
         if game_type == 'dtc':
-            self.config_file_path = "../ViZDoom/scenarios/defend_the_center.cfg"
+            self.config_file_path = "scenarios/defend_the_center.cfg"
             self.living_reward = 1
             self.default_living_reward = 1
         elif game_type == 'basic':
-            self.config_file_path = "../ViZDoom/scenarios/simpler_basic.cfg"
+            self.config_file_path = "scenarios/simpler_basic.cfg"
             self.living_reward = -1
             self.default_living_reward = -1
 
@@ -82,7 +82,7 @@ class PlayGame:
         # Create replay memory which will store the transitions
         self.memory = ReplayMemory(capacity=self.replay_memory_size, kframes=self.kframes, resolution=self.resolution, test_memory_size=self.test_memory_size)
 
-        self.dqn = DQN(self.memory, self.model, self.game, self.actions, self.resolution, self.frame_repeat, self.batch_size, self.kframes, self.epochs, self.discount_factor)
+        self.dqn = DQN(self.memory, self.model, self.game, self.actions, self.resolution, self.frame_repeat, self.batch_size, self.kframes, self.epochs, self.discount_factor, self.model_type)
 
     # Creates and initializes ViZDoom environment.
     def initialize_vizdoom(self):
@@ -316,7 +316,7 @@ class PlayGame:
 
 def main():
     # 1 = train agent, 2 = test agent, 3 = transfer learning, 4 = test hyperparameters
-    option = 4
+    option = 1
 
     # Set to True for option 2 or 3
     load_model = False

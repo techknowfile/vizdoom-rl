@@ -107,9 +107,11 @@ class ReplayMemory:
 
 
 class DQN:
-    def __init__(self, memory, model, game, actions, resolution, frame_repeat, batch_size, kframes, epochs, discount_factor):
+    def __init__(self, memory, model, game, actions, resolution, frame_repeat, batch_size, kframes, epochs, discount_factor,
+                 model_type):
         self.memory = memory
         self.model = model
+        self.model_type = model_type
         self.game = game
         self.actions = actions
         self.resolution = resolution
@@ -130,6 +132,13 @@ class DQN:
         if self.memory.size > self.batch_size:
             s1, a, s2, isterminal, r = self.memory.get_sample(self.batch_size)
 
+            if self.model_type == 4:
+                s1 = s1.reshape(
+                    list(s1.shape[0:2]) + [1] + list(self.resolution))  # converting to [ batch*kframes*1channel*width*height ]
+                s2 = s2.reshape(
+                    list(s2.shape[0:2]) + [1] + list(self.resolution))  # converting to [ batch*kframes*1channel*width*height ]
+
+
             q = model.predict(s2, batch_size=self.batch_size)
             q2 = np.max(q, axis=1)
             target_q = model.predict(s1, batch_size=self.batch_size)
@@ -137,10 +146,15 @@ class DQN:
             model.fit(s1, target_q, verbose=0)
 
     def get_best_action(self, state):
+        if self.model_type == 4:
+            state = state.reshape(
+                list(state.shape[0:2]) + [1] + list(self.resolution))  # converting to [ batch*kframes*1channel*width*height ]
+
         q = self.model.predict(state, batch_size=1)
         m = np.argmax(q, axis=1)[0]
         action = m  # wrong
         return action
+
 
     def perform_learning_step(self, epoch):
         """ Makes an action according to eps-greedy policy, observes the result
