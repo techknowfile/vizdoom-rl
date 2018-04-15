@@ -18,23 +18,23 @@ warnings.filterwarnings("ignore")
 class PlayGame:
     def __init__(self, load_model, game_type, model_savefile):
         # Q-learning hyperparams
-        self.kframes = 3
+        self.kframes = 1
         self.learning_rate = 0.0006
         self.discount_factor = 1.0
-        self.epochs = 20
+        self.epochs = 2
         self.learning_steps_per_epoch = 1000
         self.replay_memory_size = 10000
         self.test_memory_size = 10000
 
         # NN learning hyperparams
         self.batch_size = 64
-        self.model_type = 4
+        self.model_type = 3
 
         # Training regime
         self.test_episodes_per_epoch = 10
 
         # Other parameters
-        self.frame_repeat = 6
+        self.frame_repeat = 10
         self.resolution = [30, 45]
         self.episodes_to_watch = 10
 
@@ -69,7 +69,7 @@ class PlayGame:
         # Action = which buttons are pressed
         n = self.game.get_available_buttons_size()
         self.actions = [list(a) for a in it.product([0, 1], repeat=n)]
-        self.actions = [[0, 0, 1], [0, 1, 0], [1, 0, 0]]
+        # self.actions = [[0, 0, 1], [0, 1, 0], [1, 0, 0]]
 
         if self.load_model:
             print("Loading model from: ", self.model_savefile)
@@ -102,22 +102,22 @@ class PlayGame:
         # Train a new agent if we are not loading one
         if not self.load_model:
             # Train model in environment
-            self.train_agent()
+            self.train_agent("transfer_learn_pre_transfer.pth")
 
             # View model in environment
             self.view_agent()
 
         # Reverse environment
         if self.game_type == 'dtc':
-            self.config_file_path = "../ViZDoom/scenarios/simpler_basic.cfg"
+            self.config_file_path = "scenarios/simpler_basic.cfg"
         elif self.game_type == 'basic':
-            self.config_file_path = "../ViZDoom/scenarios/defend_the_center.cfg"
+            self.config_file_path = "scenarios/defend_the_center.cfg"
 
         # Reinitialize game environment
         self.initialize_game()
 
         # Train model in new environment
-        self.train_agent("dummy_savefile")
+        self.train_agent("transfer_learn_post_transfer.pth")
 
         # View model in new environment
         self.view_agent()
@@ -154,13 +154,14 @@ class PlayGame:
                 # Re-initialize
                 self.initialize_game()
 
-                mean_scores, std_scores = self.train_agent()
+                mean_scores, std_scores = self.train_agent("dummy.pth")
 
                 # Store data
                 self.save_data(mean_scores, std_scores)
 
     def view_agent(self):
         # Reinitialize the game with window visible
+        self.game.close()
         self.game.set_window_visible(True)
         self.game.set_mode(Mode.ASYNC_PLAYER)
         self.game.init()
@@ -317,11 +318,14 @@ class PlayGame:
 
 def main():
     # 1 = train agent, 2 = test agent, 3 = transfer learning, 4 = test hyperparameters
-    option = 1
+    option = 4
 
-    # Set to True for option 2 or 3
     load_model = False
-    model_savefile = "models/lstm.pth"
+    # Set to True for option 2 or 3
+    if option == 2 or option == 3:
+        load_model = True
+
+    model_savefile = "models/mean_10-5_std_3.2.pth"
 
     # Other option is 'basic'
     game_type = 'basic'
