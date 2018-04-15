@@ -94,6 +94,5 @@ class NeuralModel:
         das_optimizer = RMSprop(lr=self.learning_rate)
         model.compile(loss="mse", optimizer=das_optimizer)
         print(model.summary())
-
         return state_input, model
 

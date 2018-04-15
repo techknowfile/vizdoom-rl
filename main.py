@@ -34,7 +34,7 @@ class PlayGame:
         self.test_episodes_per_epoch = 10
 
         # Other parameters
-        self.frame_repeat = 10
+        self.frame_repeat = 6
         self.resolution = [30, 45]
         self.episodes_to_watch = 10
 
@@ -117,14 +117,14 @@ class PlayGame:
         self.initialize_game()
 
         # Train model in new environment
-        self.train_agent()
+        self.train_agent("dummy_savefile")
 
         # View model in new environment
         self.view_agent()
 
     def optimize_hyperprameters(self):
         discount_factor_list = [1, 0.98, 0.95, 0.9]
-        model_type = [1, 2, 3]
+        model_type = [1, 2, 3, 4]
         reward_shape = [-1, 0, 1]
 
         hyperparameter_names = ['RS', 'DF', 'MT']
@@ -184,7 +184,7 @@ class PlayGame:
             score = self.game.get_total_reward()
             print("Total score: ", score)
 
-    def train_agent(self):
+    def train_agent(self, model_savefile):
         mean_score_list = []
         std_score_list = []
 
@@ -245,6 +245,7 @@ class PlayGame:
         self.game.close()
         print("======================================")
         print("Training finished.")
+        self.save_model(model_savefile)
 
         return mean_score_list, std_score_list
 
@@ -320,7 +321,7 @@ def main():
 
     # Set to True for option 2 or 3
     load_model = False
-    model_savefile = "models/1.pth"
+    model_savefile = "models/lstm.pth"
 
     # Other option is 'basic'
     game_type = 'basic'
@@ -329,7 +330,7 @@ def main():
 
     # Train agent
     if option == 1:
-        pg.train_agent()
+        pg.train_agent(model_savefile)
         pg.view_agent()
     # Test a trained agent
     elif option == 2:
