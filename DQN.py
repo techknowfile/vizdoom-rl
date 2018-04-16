@@ -146,25 +146,39 @@ class DQN:
         """ Makes an action according to eps-greedy policy, observes the result
         (next state, reward) and learns from the transition"""
 
-        def exploration_rate(epoch):
+        def exploration_rate(epoch, decay = 'log'):
             """# Define exploration rate change over time"""
 
             # return 0.1
+            if(decay == 'linear'): 
+                start_eps = 1.0
+                end_eps = 0.1
+                const_eps_epochs = 0.1 * self.epochs  # 10% of learning time
+                eps_decay_epochs = 0.8 * self.epochs  # 60% of learning time
 
-            start_eps = 1.0
-            end_eps = 0.1
-            const_eps_epochs = 0.1 * self.epochs  # 10% of learning time
-            eps_decay_epochs = 0.6 * self.epochs  # 60% of learning time
+                if epoch < const_eps_epochs:
+                    return start_eps
+                elif epoch < eps_decay_epochs:
+                    # Linear decay
+                    return start_eps - (epoch - const_eps_epochs) / \
+                           (eps_decay_epochs - const_eps_epochs) * (start_eps - end_eps)
+                else:
+                    return end_eps
+            elif(decay == 'log'):
+                steepness=7
+                start_eps = 5.0
+                end_eps = 0.1
+                const_eps_epochs = 0.1 * self.epochs  # 10% of learning time
+                eps_decay_epochs = 0.8 * self.epochs  # 60% of learning time
 
-            if epoch < const_eps_epochs:
-                return start_eps
-            elif epoch < eps_decay_epochs:
-                # Linear decay
-                return start_eps - (epoch - const_eps_epochs) / \
-                       (eps_decay_epochs - const_eps_epochs) * (start_eps - end_eps)
-            else:
-                return end_eps
-
+                if epoch < const_eps_epochs:
+                    return start_eps
+                elif epoch < eps_decay_epochs:
+                    # Logistic decay
+                    return start_eps - np.arctan(steepness*(epoch - const_eps_epochs) / \
+                           (eps_decay_epochs - const_eps_epochs)) / np.arctan(steepness) * (start_eps - end_eps)
+                else:
+                    return end_eps
         s1 = self.preprocess(self.game.get_state().screen_buffer)
 
         # With probability eps make a random action.
@@ -188,7 +202,3 @@ class DQN:
         self.memory.add_transition(s1, a, s2, isterminal, reward)
 
         self.learn_from_memory(self.model)
-
-
-
-
