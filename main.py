@@ -126,9 +126,10 @@ class PlayGame:
         discount_factor_list = [1, 0.98, 0.95, 0.9]
         model_type = [1,2,3,4]
         reward_shape = [-1, 0, 1]
+        frame_repeat= [3,6,9,12]
 
-        hyperparameter_names = ['RS', 'DF', 'MT']
-        hyperparameters = [reward_shape, discount_factor_list, model_type]
+        hyperparameter_names = ['RS', 'DF', 'MT','FR']
+        hyperparameters = [reward_shape, discount_factor_list, model_type,frame_repeat]
 
         for index, hyperparameter_list in enumerate(hyperparameters):
             plt.close(1)
@@ -153,6 +154,13 @@ class PlayGame:
                         self.model_type = 1 #all the models are the first (and only) cnn model
                     self.living_reward = self.default_living_reward
                     self.discount_factor = 1.0
+                elif hyperparameter_names[index] == 'FR':
+                    self.discount_factor = 1.0
+                    self.living_reward = self.default_living_reward
+                    self.model_type = 1
+                    self.kframes = 1
+                    self.frame_repeat = parameter
+                #---end if/else
                 # Re-initialize
                 self.initialize_game()
                 mean_scores, std_scores = self.train_agent("dummy.pth")
