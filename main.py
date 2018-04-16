@@ -18,11 +18,11 @@ warnings.filterwarnings("ignore")
 class PlayGame:
     def __init__(self, load_model, game_type, model_savefile):
         # Q-learning hyperparams
-        self.kframes = 1
-        self.learning_rate = 0.0006
+        self.kframes = 2
+        self.learning_rate = 0.001
         self.discount_factor = 1.0
-        self.epochs = 2
-        self.learning_steps_per_epoch = 1000
+        self.epochs = 10
+        self.learning_steps_per_epoch = 20000
         self.replay_memory_size = 10000
         self.test_memory_size = 10000
 
@@ -124,7 +124,7 @@ class PlayGame:
 
     def optimize_hyperprameters(self):
         discount_factor_list = [1, 0.98, 0.95, 0.9]
-        model_type = [1, 2, 3, 4]
+        model_type = [1,2,3,4]
         reward_shape = [-1, 0, 1]
 
         hyperparameter_names = ['RS', 'DF', 'MT']
@@ -148,14 +148,14 @@ class PlayGame:
                     self.model_type = 1
                 elif hyperparameter_names[index] == 'MT':
                     self.model_type = parameter
+                    if self.model_type != 4:
+                        self.kframes = self.model_type # so 1,2,3 becomes the kframe size
+                        self.model_type = 1 #all the models are the first (and only) cnn model
                     self.living_reward = self.default_living_reward
                     self.discount_factor = 1.0
-
                 # Re-initialize
                 self.initialize_game()
-
                 mean_scores, std_scores = self.train_agent("dummy.pth")
-
                 # Store data
                 self.save_data(mean_scores, std_scores)
 
@@ -328,7 +328,7 @@ def main():
     model_savefile = "models/mean_10-5_std_3.2.pth"
 
     # Other option is 'basic'
-    game_type = 'basic'
+    game_type = 'dtc'
 
     pg = PlayGame(load_model, game_type, model_savefile)
 
