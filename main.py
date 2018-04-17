@@ -22,13 +22,13 @@ class PlayGame:
         self.learning_rate = 0.001
         self.discount_factor = 1.0
         self.epochs = 10
-        self.learning_steps_per_epoch = 20000
+        self.learning_steps_per_epoch = 1000
         self.replay_memory_size = 10000
         self.test_memory_size = 10000
 
         # NN learning hyperparams
         self.batch_size = 64
-        self.model_type = 3
+        self.model_type = 1
 
         # Training regime
         self.test_episodes_per_epoch = 10
@@ -124,12 +124,12 @@ class PlayGame:
 
     def optimize_hyperprameters(self):
         discount_factor_list = [1, 0.98, 0.95, 0.9]
-        model_type = [1,2,3,4]
+        model_type = [1, 2, 3, 4]
         reward_shape = [-1, 0, 1]
-        frame_repeat= [3,6,9,12]
+        frame_repeat = [3, 6, 9, 12]
 
-        hyperparameter_names = ['RS', 'DF', 'MT','FR']
-        hyperparameters = [reward_shape, discount_factor_list, model_type,frame_repeat]
+        hyperparameter_names = ['RS', 'DF', 'MT', 'FR']
+        hyperparameters = [reward_shape, discount_factor_list, model_type, frame_repeat]
 
         for index, hyperparameter_list in enumerate(hyperparameters):
             plt.close(1)
@@ -143,10 +143,14 @@ class PlayGame:
                     self.living_reward = parameter
                     self.discount_factor = 1.0
                     self.model_type = 1
+                    self.kframes = 2
+                    self.frame_repeat = 10
                 elif hyperparameter_names[index] == 'DF':
                     self.discount_factor = parameter
                     self.living_reward = self.default_living_reward
                     self.model_type = 1
+                    self.kframes = 2
+                    self.frame_repeat = 10
                 elif hyperparameter_names[index] == 'MT':
                     self.model_type = parameter
                     if self.model_type != 4:
@@ -154,13 +158,14 @@ class PlayGame:
                         self.model_type = 1 #all the models are the first (and only) cnn model
                     self.living_reward = self.default_living_reward
                     self.discount_factor = 1.0
+                    self.frame_repeat = 10
                 elif hyperparameter_names[index] == 'FR':
+                    self.frame_repeat = parameter
                     self.discount_factor = 1.0
                     self.living_reward = self.default_living_reward
                     self.model_type = 1
-                    self.kframes = 1
-                    self.frame_repeat = parameter
-                #---end if/else
+                    self.kframes = 2
+
                 # Re-initialize
                 self.initialize_game()
                 mean_scores, std_scores = self.train_agent("dummy.pth")
@@ -336,7 +341,7 @@ def main():
     model_savefile = "models/mean_10-5_std_3.2.pth"
 
     # Other option is 'basic'
-    game_type = 'dtc'
+    game_type = 'basic'
 
     pg = PlayGame(load_model, game_type, model_savefile)
 
