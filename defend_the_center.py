@@ -1,4 +1,5 @@
 from vizdoom import *
+import json
 import os
 import itertools as it
 import keras
@@ -36,8 +37,12 @@ resolution[1] = resolution[1]*kframes
 episodes_to_watch = 10
 
 model_savefile = "models/model-dtc-fr{}-kf{}.pth".format(frame_repeat, kframes)
+model_datafile = "data/model-dtc-fr{}-kf{}.pth".format(frame_repeat, kframes)
 if not os.path.exists('models'):
     os.makedirs('models')
+
+if not os.path.exists('data'):
+    os.makedirs('data')
 
 save_model = True
 load_model = True
@@ -227,6 +232,10 @@ if __name__ == '__main__':
     print("Starting the training!")
     time_start = time()
     if not skip_learning:
+        mean_score_list = []
+        std_score_list = []
+        learning_steps_list = []
+
         for epoch in range(epochs):
             print("\nEpoch %d\n-------" % (epoch + 1))
             train_episodes_finished = 0
@@ -268,12 +277,18 @@ if __name__ == '__main__':
                 test_scores.append(r)
 
             test_scores = np.array(test_scores)
+            mean_score_list.append(test_scores.mean())
+            std_score_list.append(test_scores.std())
+            learning_steps_list.append(learning_steps_list[-1]+learning_steps_per_epoch if learning_steps_list else learning_steps_per_epoch)
             print("Results: mean: %.1f +/- %.1f," % (
                 test_scores.mean(), test_scores.std()), "min: %.1f" % test_scores.min(),
                   "max: %.1f" % test_scores.max())
 
             print("Saving the network weigths to:", model_savefile)
             model.save(model_savefile)
+            with open(model_datafile, 'w+') as f:
+                data = {'means': mean_score_list, 'stds': std_score_list, 'learning_steps': learning_steps_list}
+                json.dump(data, f)
 
             print("Total elapsed time: %.2f minutes" % ((time() - time_start) / 60.0))
 
