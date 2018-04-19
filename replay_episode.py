@@ -19,7 +19,7 @@ game.load_config(config_file_path)
 game.set_window_visible(True)
 game.init()
 print("Doom initialized.")
-
+sleep(5.0)
 game.replay_episode("./recordings/ep_{}.lmp".format(args.ep))
 
 while not game.is_episode_finished():

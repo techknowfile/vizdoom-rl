@@ -232,8 +232,8 @@ if __name__ == '__main__':
         model_savefile = "{}".format(args.model)
         model_datafile = "data/{}".format(args.model)
     else:
-        model_savefile = "models/model-dtc-fr{}-kf{}-act3.pth".format(frame_repeat, kframes)
-        model_datafile = "data/model-dtc-fr{}-kf{}-act3.pth".format(frame_repeat, kframes)
+        model_savefile = "models/model-dtc-fr{}-kf{}.pth".format(frame_repeat, kframes)
+        model_datafile = "data/model-dtc-fr{}-kf{}.pth".format(frame_repeat, kframes)
 
     print(("Testing" if skip_learning else "Training"), 'KFrames:', kframes, 'Frame Repeat:', frame_repeat)
 
@@ -242,9 +242,9 @@ if __name__ == '__main__':
 
     # Action = which buttons are pressed
     n = game.get_available_buttons_size()
-    # actions = [list(a) for a in it.product([0, 1], repeat=n)]
+    actions = [list(a) for a in it.product([0, 1], repeat=n)]
 
-    actions = [[1,0,0],[0,1,0],[0,0,1]]
+    # actions = [[1,0,0],[0,1,0],[0,0,1]]
     # Create replay memory which will store the transitions
     memory = ReplayMemory(capacity=replay_memory_size)
 
