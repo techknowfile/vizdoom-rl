@@ -34,11 +34,8 @@ resolution = (30, 45)
 frame_repeat = 10
 resolution = [30, 45]
 kframes = 1
-
-#TODO: change kframes implementation
-# resolution[1] = resolution[1]*kframes
-
-episodes_to_watch = 10000
+resolution[1] = resolution[1]*kframes
+episodes_to_watch = 10
 
 model_savefile = "models/model-dtc-fr{}-kf{}.pth".format(frame_repeat, kframes)
 model_datafile = "data/model-dtc-fr{}-kf{}.pth".format(frame_repeat, kframes)
@@ -229,7 +226,7 @@ if __name__ == '__main__':
     if args.frame_repeat:
         frame_repeat = args.frame_repeat
     if args.model and load_model:
-        model_savefile = "{}".format(args.model)
+        model_savefile = "models/{}".format(args.model)
         model_datafile = "data/{}".format(args.model)
     else:
         model_savefile = "models/model-dtc-fr{}-kf{}-act3.pth".format(frame_repeat, kframes)
@@ -242,14 +239,14 @@ if __name__ == '__main__':
 
     # Action = which buttons are pressed
     n = game.get_available_buttons_size()
-    # actions = [list(a) for a in it.product([0, 1], repeat=n)]
+    #actions = [list(a) for a in it.product([0, 1], repeat=n)]
 
     actions = [[1,0,0],[0,1,0],[0,0,1]]
     # Create replay memory which will store the transitions
     memory = ReplayMemory(capacity=replay_memory_size)
 
     if load_model and os.path.isfile(model_savefile):
-        print("Loading model formatom: ", model_savefile)
+        print("Loading model from: ", model_savefile)
         model = lm(model_savefile)
     else:
         my_input, model = create_model(len(actions))
@@ -322,16 +319,12 @@ if __name__ == '__main__':
     print("Training finished. It's time to watch!")
 
     # Reinitialize the game with window visible
-    # game.set_window_visible(True)
-    # game.set_mode(Mode.ASYNC_PLAYER)
+    game.set_window_visible(True)
+    game.set_mode(Mode.ASYNC_PLAYER)
     game.init()
 
-    cleaner = None
-    for i in range(episodes_to_watch):
-        game.new_episode('./recordings/ep_{}.lmp'.format(i))
-        if cleaner:
-            os.remove('recordings/ep_{}.lmp'.format(cleaner))
-            cleaner = None
+    for _ in range(episodes_to_watch):
+        game.new_episode()
         sb = StateBuilder((1, 1, resolution[0], resolution[1] // kframes), frames_per_state=kframes)
         while not game.is_episode_finished():
             frame = preprocess(game.get_state().screen_buffer)
@@ -345,10 +338,8 @@ if __name__ == '__main__':
                 game.advance_action()
 
         # Sleep between episodes
-        # sleep(1.0)
+        sleep(1.0)
         score = game.get_total_reward()
-        if score < 24:
-            cleaner = i
-        print(i, "Total score: ", score)
+        print("Total score: ", score)
 
 state_input, model = create_model(8)
