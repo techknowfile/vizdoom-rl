@@ -34,10 +34,7 @@ resolution = (30, 45)
 frame_repeat = 10
 resolution = [30, 45]
 kframes = 1
-
-#TODO: change kframes implementation
-# resolution[1] = resolution[1]*kframes
-
+resolution[1] = resolution[1]*kframes
 episodes_to_watch = 10
 
 model_savefile = "models/model-dtc-fr{}-kf{}.pth".format(frame_repeat, kframes)
@@ -219,7 +216,6 @@ if __name__ == '__main__':
     parser.add_argument('-k', '--kframes', type=int)
     parser.add_argument('-t', '--test', action='store_true', default=None)
     parser.add_argument('-r', '--frame_repeat', type=int)
-    parser.add_argument('-m', '--model', default=None)
     args, extras = parser.parse_known_args()
     if args.kframes:
         kframes = args.kframes
@@ -228,10 +224,6 @@ if __name__ == '__main__':
         skip_learning = True
     if args.frame_repeat:
         frame_repeat = args.frame_repeat
-    if args.model and load_model:
-        model_savefile = "models/{}".format(args.model)
-        model_datafile = "data/{}".format(args.model)
-    else:
         model_savefile = "models/model-dtc-fr{}-kf{}-act3.pth".format(frame_repeat, kframes)
         model_datafile = "data/model-dtc-fr{}-kf{}-act3.pth".format(frame_repeat, kframes)
 
