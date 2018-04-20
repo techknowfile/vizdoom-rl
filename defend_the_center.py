@@ -1,4 +1,5 @@
 from vizdoom import *
+import math
 import json
 import os
 import itertools as it
@@ -16,7 +17,7 @@ from tqdm import trange
 # Q-learning hyperparams
 learning_rate = 0.001
 discount_factor = 0.99
-epochs = 100
+epochs = 1000
 learning_steps_per_epoch = 10000
 replay_memory_size = 100000
 
@@ -108,6 +109,19 @@ def create_model(available_actions_count):
     model.compile(loss="mse", optimizer=adam)
     return state_input, model
 
+def create_model(available_actions_count):
+    state_input = Input(shape=(1, resolution[0], resolution[1]))
+    conv1 = Conv2D(8, 6, strides=3, activation='relu', data_format="channels_first")(state_input)  # filters, kernal_size, stride
+    conv2 = Conv2D(8, 3, strides=2, activation='relu', data_format="channels_first")(conv1)  # filters, kernal_size, stride
+    flatten = Flatten()(conv2)
+    fc1 = Dense(128, input_shape=(192,), activation='relu')(flatten)
+    fc2 = Dense(available_actions_count, input_shape=(128,))(fc1)
+
+    model = keras.models.Model(input=state_input, output=fc2)
+    adam = Adam(lr=0.001)
+    model.compile(loss="mse", optimizer=adam)
+    return state_input, model
+
 def learn_from_memory(model):
     """ Use replay memory to learn. Ignore s2 if s1 is terminal """
 
@@ -145,12 +159,12 @@ def perform_learning_step(epoch, sb):
 
     def exploration_rate(epoch):
         """# Define exploration rate change over time"""
-        start_eps = 0.4
+        start_eps = 0.05
         end_eps = 0.1
         const_eps_epochs = 0.1 * epochs  # 10% of learning time
         eps_decay_epochs = 0.6 * epochs  # 60% of learning time
 
-        if epoch < const_eps_epochs:
+        if epoch < math.inf:
             return start_eps
         elif epoch < eps_decay_epochs:
             # Linear decay
@@ -202,6 +216,7 @@ if __name__ == '__main__':
     parser.add_argument('-k', '--kframes', type=int)
     parser.add_argument('-t', '--test', action='store_true', default=None)
     parser.add_argument('-r', '--frame_repeat', type=int)
+    parser.add_argument('-m', '--model', default=None)
     args, extras = parser.parse_known_args()
     if args.kframes:
         kframes = args.kframes
@@ -210,6 +225,12 @@ if __name__ == '__main__':
         skip_learning = True
     if args.frame_repeat:
         frame_repeat = args.frame_repeat
+    if args.model and load_model:
+        model_savefile = "models/{}".format(args.model)
+        model_datafile = "data/{}".format(args.model)
+    else:
+        model_savefile = "models/model-dtc-fr{}-kf{}-long.pth".format(frame_repeat, kframes)
+        model_datafile = "data/model-dtc-fr{}-kf{}-long.pth".format(frame_repeat, kframes)
 
     print(("Testing" if skip_learning else "Training"), 'KFrames:', kframes, 'Frame Repeat:', frame_repeat)
 
@@ -220,6 +241,7 @@ if __name__ == '__main__':
     n = game.get_available_buttons_size()
     actions = [list(a) for a in it.product([0, 1], repeat=n)]
 
+    #actions = [[1,0,0],[0,1,0],[0,0,1]]
     # Create replay memory which will store the transitions
     memory = ReplayMemory(capacity=replay_memory_size)
 
