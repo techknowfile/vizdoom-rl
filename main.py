@@ -4,6 +4,7 @@ from time import time, sleep
 from keras.models import load_model as lm
 import itertools as it
 import os
+import json
 import numpy as np
 import warnings
 import matplotlib.pyplot as plt
@@ -18,23 +19,23 @@ warnings.filterwarnings("ignore")
 class PlayGame:
     def __init__(self, load_model, game_type, model_savefile):
         # Q-learning hyperparams
-        self.kframes = 2
-        self.learning_rate = 0.001
+        self.kframes = 3
+        self.learning_rate = 0.0006
         self.discount_factor = 1.0
-        self.epochs = 10
-        self.learning_steps_per_epoch = 1000
+        self.epochs = 200
+        self.learning_steps_per_epoch = 10000
         self.replay_memory_size = 10000
         self.test_memory_size = 10000
 
         # NN learning hyperparams
         self.batch_size = 64
-        self.model_type = 1
+        self.model_type = 4
 
         # Training regime
-        self.test_episodes_per_epoch = 10
+        self.test_episodes_per_epoch = 100
 
         # Other parameters
-        self.frame_repeat = 10
+        self.frame_repeat = 3
         self.resolution = [30, 45]
         self.episodes_to_watch = 10
 
@@ -201,6 +202,10 @@ class PlayGame:
     def train_agent(self, model_savefile):
         mean_score_list = []
         std_score_list = []
+        learning_steps_list = []
+
+        model_datafile = "data/model-game{}-fr{}-kf{}-long.pth".format(\
+            self.game_type,self.frame_repeat, self.kframes)
 
         print("Starting the training!")
         time_start = time()
@@ -249,7 +254,9 @@ class PlayGame:
             std_score = test_scores.std()
             mean_score_list.append(mean_score)
             std_score_list.append(std_score)
-
+            learning_steps_list.append(
+                learning_steps_list[-1] + self.learning_steps_per_epoch if learning_steps_list\
+                    else self.learning_steps_per_epoch)
             print("Results: mean: %.1f +/- %.1f," % (
                 mean_score, std_score), "min: %.1f" % test_scores.min(),
                   "max: %.1f" % test_scores.max())
@@ -260,6 +267,9 @@ class PlayGame:
         print("======================================")
         print("Training finished.")
         self.save_model(model_savefile)
+        with open(model_datafile, 'w+') as f:
+            data = {'means': mean_score_list, 'stds': std_score_list, 'learning_steps': learning_steps_list}
+            json.dump(data, f)
 
         return mean_score_list, std_score_list
 
@@ -341,7 +351,7 @@ def main():
     model_savefile = "models/mean_10-5_std_3.2.pth"
 
     # Other option is 'basic'
-    game_type = 'basic'
+    game_type = 'dtc'
 
     pg = PlayGame(load_model, game_type, model_savefile)
 
@@ -361,4 +371,5 @@ def main():
 
 
 if __name__ == '__main__':
+
     main()
