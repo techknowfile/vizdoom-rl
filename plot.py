@@ -14,13 +14,6 @@ for i in range(len(tableau20)):
     r, g, b = tableau20[i]
     tableau20[i] = (r / 255., g / 255., b / 255.)
 
-results = [] 
-for experiment in glob.glob("./data/*"):
-    with open(experiment, 'r') as f:
-        data = json.load(f)
-        data['experiment'] = experiment
-        results.append(data)
-
 #for i, result in enumerate(results):
 #    print(result['means'])
 #    plt.plot(result['learning_steps'], result['means'], label=result['experiment'])
