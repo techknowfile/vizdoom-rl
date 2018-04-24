@@ -22,8 +22,8 @@ class PlayGame:
         self.kframes = 3
         self.learning_rate = 0.0006
         self.discount_factor = 1.0
-        self.epochs = 200
-        self.learning_steps_per_epoch = 10000
+        self.epochs = 3
+        self.learning_steps_per_epoch = 200
         self.replay_memory_size = 10000
         self.test_memory_size = 10000
 
@@ -32,7 +32,7 @@ class PlayGame:
         self.model_type = 4
 
         # Training regime
-        self.test_episodes_per_epoch = 100
+        self.test_episodes_per_epoch = 10
 
         # Other parameters
         self.frame_repeat = 3
@@ -262,14 +262,16 @@ class PlayGame:
                   "max: %.1f" % test_scores.max())
 
             print("Total elapsed time: %.2f minutes" % ((time() - time_start) / 60.0))
+            #dump the data per epoch into the model data file
+            with open(model_datafile, 'w+') as f:
+                data = {'means': mean_score_list, 'stds': std_score_list, 'learning_steps': learning_steps_list}
+                json.dump(data, f)
 
         self.game.close()
         print("======================================")
         print("Training finished.")
         self.save_model(model_savefile)
-        with open(model_datafile, 'w+') as f:
-            data = {'means': mean_score_list, 'stds': std_score_list, 'learning_steps': learning_steps_list}
-            json.dump(data, f)
+
 
         return mean_score_list, std_score_list
 
@@ -341,7 +343,7 @@ class PlayGame:
 
 def main():
     # 1 = train agent, 2 = test agent, 3 = transfer learning, 4 = test hyperparameters
-    option = 4
+    option = 1
 
     load_model = False
     # Set to True for option 2 or 3
