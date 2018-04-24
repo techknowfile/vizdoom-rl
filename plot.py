@@ -63,6 +63,8 @@ plt.ylabel('Mean Score (100 episodes)', fontsize=12)
 plt.title('Model Performance Over Time with Different Frame Repeats', fontsize=12)
 plt.draw()
 input('press [enter] to close.')
+plt.close()
 
-
-
+#add_to_subplot(plt, './data/model-dtc-fr10-kf4-LSTM.pth', 'blah', 2, 4)
+#plt.draw()
+#input('press [enter] to close.')
