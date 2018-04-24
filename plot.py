@@ -5,6 +5,11 @@ plt.style.use('ggplot')
 import json
 import os, glob
 
+"""
+:summary: This plots the data file saved with option = 1. 
+This entire would was written
+"""
+
 tableau20 = [(31, 119, 180), (174, 199, 232), (255, 127, 14), (255, 187, 120),
              (44, 160, 44), (152, 223, 138), (214, 39, 40), (255, 152, 150),
              (148, 103, 189), (197, 176, 213), (140, 86, 75), (196, 156, 148),
@@ -25,7 +30,7 @@ def add_to_subplot(ax, model, label, label_var, c=0):
 
 
 #--- CODE TO PLOT one plot
-add_to_subplot(plt, 'model-gamedtc-fr3-kf3-long.pth', 'average_score', 2, 4)
+add_to_subplot(plt,'./data/model-gamedtc-fr3-kf3-long.pth', 'average_score', 2, 4)
 plt.draw()
 plt.show()
 input('press [enter] to close.')

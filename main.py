@@ -15,6 +15,17 @@ from DQN import DQN
 
 warnings.filterwarnings("ignore")
 
+"""
+:Summary : This code contains the code to initialize the vizdoom game and train
+the neural networks for DQN.
+
+NOTE :Some parts of this code was borrowed from the github
+repository at 
+
+https://github.com/flyyufelix/VizDoom-Keras-RL/blob/master/drqn.py
+
+We highlight the sections that were borrowed from the aforementioned repository.
+"""
 
 class PlayGame:
     def __init__(self, load_model, game_type, model_savefile):
@@ -87,6 +98,9 @@ class PlayGame:
 
     # Creates and initializes ViZDoom environment.
     def initialize_vizdoom(self):
+        """
+        This code was borrowed from the github repo mentioned at the start of the file
+        """
         print("Initializing doom...")
         game = DoomGame()
         game.load_config(self.config_file_path)
@@ -207,6 +221,11 @@ class PlayGame:
         model_datafile = "data/model-game{}-fr{}-kf{}-long.pth".format(\
             self.game_type,self.frame_repeat, self.kframes)
 
+        """
+        NOTE :Most of the code from here to the end was borrowed from the github repo mentioned at the start of the file
+        We made some modifications to save the data better, and reshaping arrays for the changes to the neural network
+        architecture         
+        """
         print("Starting the training!")
         time_start = time()
         for epoch in range(self.epochs):

@@ -3,8 +3,20 @@ import random
 import skimage.color, skimage.transform
 import numpy as np
 
+"""
+NOTE : Large parts of this file contains code borrowed from
+https://github.com/flyyufelix/VizDoom-Keras-RL/blob/master/drqn.py
+
+The parts are clearly marked with comments
+"""
 
 class ReplayMemory:
+    """
+    NOTE: The init function and the core replay memory code to init, add transition, and get sample
+    was started from the code found at the aforementioned github repository. We made a lot of modifications
+    to support sampling multiple frames, as well as reshaping, and adding a separate test memory on top of the
+    replay memory
+    """
     def __init__(self, capacity, kframes, resolution, test_memory_size):
         self.resolution = resolution
         state_shape = (capacity, resolution[0], resolution[1] )
@@ -128,7 +140,10 @@ class DQN:
 
     def learn_from_memory(self, model):
         """ Use replay memory to learn. Ignore s2 if s1 is terminal """
-
+        """
+        NOTE: This code is largely unchanged from the github repository code and is very standard for Deep RL.
+        only the rehsaping code is ours in this method. 
+        """
         if self.memory.size > self.batch_size:
             s1, a, s2, isterminal, r = self.memory.get_sample(self.batch_size)
 
@@ -146,6 +161,10 @@ class DQN:
             model.fit(s1, target_q, verbose=0)
 
     def get_best_action(self, state):
+        """
+        NOTE: This code is largely unchanged from the github repository code and is very standard for Deep RL.
+        only the rehsaping code is ours in this method.
+        """
         if self.model_type == 4:
             state = state.reshape(
                 list(state.shape[0:2]) + [1] + list(self.resolution))  # converting to [ batch*kframes*1channel*width*height ]
@@ -159,7 +178,11 @@ class DQN:
     def perform_learning_step(self, epoch):
         """ Makes an action according to eps-greedy policy, observes the result
         (next state, reward) and learns from the transition"""
-
+        """
+        NOTE: This code is largely unchanged from the github repository code and contains very standard steps for Deep RL.
+        We do NOT take any credit for this code, and was not modified or analyzed for our research. We treat this like a library
+        function call        
+        """
         def exploration_rate(epoch):
             """# Define exploration rate change over time"""
 
@@ -194,7 +217,6 @@ class DQN:
         reward = self.game.make_action(self.actions[a], self.frame_repeat)
 
         isterminal = self.game.is_episode_finished()
-        #todo RESET the test buffer ELSEWHERE. not here
 
         s2 = self.preprocess(self.game.get_state().screen_buffer) if not isterminal else None
 

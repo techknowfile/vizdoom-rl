@@ -3,6 +3,10 @@ from keras.layers import Dense, Activation, Conv2D, Input, Flatten, TimeDistribu
 from keras.optimizers import Adam, RMSprop
 import keras
 
+"""
+:Summary: This file contains all the neural network architectures and related
+parameters. All of this code was written by us.
+"""
 
 class NeuralModel:
     def __init__(self, available_actions_count, learning_rate, k_frames):
