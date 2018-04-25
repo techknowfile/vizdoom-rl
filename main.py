@@ -16,16 +16,17 @@ from DQN import DQN
 warnings.filterwarnings("ignore")
 
 """
-:Summary : This code contains the code to initialize the vizdoom game and train
+Summary: This code contains the code to initialize the vizdoom game and train
 the neural networks for DQN.
 
-NOTE :Some parts of this code was borrowed from the github
-repository at 
+NOTE: Some parts of this code was borrowed from the github
+repository at:
 
 https://github.com/flyyufelix/VizDoom-Keras-RL/blob/master/drqn.py
 
 We highlight the sections that were borrowed from the aforementioned repository.
 """
+
 
 class PlayGame:
     def __init__(self, load_model, game_type, model_savefile):
@@ -33,8 +34,8 @@ class PlayGame:
         self.kframes = 3
         self.learning_rate = 0.0006
         self.discount_factor = 1.0
-        self.epochs = 3
-        self.learning_steps_per_epoch = 200
+        self.epochs = 10
+        self.learning_steps_per_epoch = 1000
         self.replay_memory_size = 10000
         self.test_memory_size = 10000
 
@@ -214,18 +215,18 @@ class PlayGame:
             print("Total score: ", score)
 
     def train_agent(self, model_savefile):
+        """
+        NOTE: Most of the code for this function is from the github repo mentioned at the start of the file.
+        We made some modifications to save the data better, and reshaping arrays for the changes to the neural network
+        architecture.
+        """
+
         mean_score_list = []
         std_score_list = []
         learning_steps_list = []
 
-        model_datafile = "data/model-game{}-fr{}-kf{}-long.pth".format(\
-            self.game_type,self.frame_repeat, self.kframes)
+        model_datafile = "data/model-game{}-fr{}-kf{}-long.pth".format(self.game_type,self.frame_repeat, self.kframes)
 
-        """
-        NOTE :Most of the code from here to the end was borrowed from the github repo mentioned at the start of the file
-        We made some modifications to save the data better, and reshaping arrays for the changes to the neural network
-        architecture         
-        """
         print("Starting the training!")
         time_start = time()
         for epoch in range(self.epochs):
@@ -290,7 +291,6 @@ class PlayGame:
         print("======================================")
         print("Training finished.")
         self.save_model(model_savefile)
-
 
         return mean_score_list, std_score_list
 
@@ -371,8 +371,8 @@ def main():
 
     model_savefile = "models/mean_10-5_std_3.2.pth"
 
-    # Other option is 'basic'
-    game_type = 'dtc'
+    # Other option is 'basic' or 'dtc'
+    game_type = 'basic'
 
     pg = PlayGame(load_model, game_type, model_savefile)
 
@@ -392,5 +392,4 @@ def main():
 
 
 if __name__ == '__main__':
-
     main()

@@ -1,7 +1,7 @@
 from matplotlib import pyplot as plt
 import pandas as pd
 #plt.style.use('fivethirtyeight')
-plt.style.use('ggplot')
+plt.style.use('glot')
 import json
 import os, glob
 
