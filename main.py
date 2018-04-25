@@ -31,23 +31,23 @@ We highlight the sections that were borrowed from the aforementioned repository.
 class PlayGame:
     def __init__(self, load_model, game_type, model_savefile):
         # Q-learning hyperparams
-        self.kframes = 3
-        self.learning_rate = 0.0006
+        self.kframes = 2
+        self.learning_rate = 0.001
         self.discount_factor = 1.0
+
+        # NN learning hyperparams
+        self.batch_size = 64
+        self.model_type = 1
+
+        # Training regime
         self.epochs = 10
         self.learning_steps_per_epoch = 1000
         self.replay_memory_size = 10000
         self.test_memory_size = 10000
-
-        # NN learning hyperparams
-        self.batch_size = 64
-        self.model_type = 4
-
-        # Training regime
         self.test_episodes_per_epoch = 10
 
         # Other parameters
-        self.frame_repeat = 3
+        self.frame_repeat = 10
         self.resolution = [30, 45]
         self.episodes_to_watch = 10
 
@@ -371,7 +371,7 @@ def main():
 
     model_savefile = "models/mean_10-5_std_3.2.pth"
 
-    # Other option is 'basic' or 'dtc'
+    # 'basic' or 'dtc'
     game_type = 'basic'
 
     pg = PlayGame(load_model, game_type, model_savefile)
