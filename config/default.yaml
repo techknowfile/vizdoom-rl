@@ -1,0 +1,19 @@
+learning_rate: 0.000005
+discount_factor: 0.99
+epochs: 100
+learning_steps_per_epoch: 10000
+replay_memory_capacity: 100000
+
+model_savefile: "models/model-doom.pth"
+batch_size: 64
+test_episodes_per_epoch: 100
+episodes_to_watch: 10
+
+image_resolution: [30, 45] 
+kframes: 3
+
+scenario: "scenarios/defend_the_center"
+
+save_model: True
+load_model: True
+skip_learning: True
